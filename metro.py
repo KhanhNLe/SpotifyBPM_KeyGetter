@@ -7,8 +7,8 @@ import time
 import threading
 
 # Replace these with your own Spotify API credentials
-client_id = '8bb285cd1d5242d7b05bebc2d64f3b9a'
-client_secret = 'd2b8f311bac94724bf4476a8f3c37895'
+client_id = 'Put your Own Here'
+client_secret = 'Put your Own Here'
 redirect_uri = 'http://localhost:8888/callback'
 
 # Set up the Spotify OAuth object
