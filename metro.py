@@ -7,8 +7,8 @@ import time
 import threading
 
 # Replace these with your own Spotify API credentials
-client_id = 'Put Your Own'
-client_secret = 'Put Your Own'
+client_id = ''
+client_secret = ''
 redirect_uri = 'http://localhost:8888/callback'
 
 # Set up the Spotify OAuth object
@@ -22,6 +22,8 @@ class MetronomeApp:
         self.root = root
         self.root.title("Metronome")
         
+        
+        
         # Initialize pygame mixer
         pygame.mixer.init()
         self.tick_sound = pygame.mixer.Sound("tick.wav")  # Ensure you have a tick.wav file in the same directory
@@ -30,7 +32,10 @@ class MetronomeApp:
         self.key = None
         self.is_running = False
 
+        
         self.create_widgets()
+        # Starts w/ The Track Info Hidden
+        self.hide_track_info() # Call Hide_Track_Info
     
     def create_widgets(self):
         self.bpm_label = ttk.Label(self.root, text="BPM:")
@@ -46,17 +51,31 @@ class MetronomeApp:
         self.stop_button = ttk.Button(self.root, text="Stop", command=self.stop_metronome)
         self.stop_button.pack(pady=10)
 
+        self.track_label = ttk.Label(self.root, text="Spotify Track ID:")
+        self.track_label.pack(pady=10)
+
         self.track_entry = ttk.Entry(self.root, width=30)
         self.track_entry.pack(pady=10)
 
         self.fetch_bpm_button = ttk.Button(self.root, text="Fetch BPM and Key from Spotify", command=self.fetch_bpm_and_key_from_spotify)
         self.fetch_bpm_button.pack(pady=10)
 
-        self.fetch_currently_playing_button = ttk.Button(self.root, text="Fetch Currently Playing Track", command=self.fetch_currently_playing_track)
-        self.fetch_currently_playing_button.pack(pady=10)
+        self.fetch_track_info_button = ttk.Button(self.root, text="Fetch Track Info", command=self.fetch_current_track_info)
+        self.fetch_track_info_button.pack(pady=10)
+
+        self.track_name_label = ttk.Label(self.root, text="Track Name: N/A")
+        self.track_name_label.pack(pady=10)
 
         self.key_label = ttk.Label(self.root, text="Key: N/A")
         self.key_label.pack(pady=10)
+
+        # Add a hide button
+        self.hide_track_info_button = ttk.Button(self.root, text="Hide Track Info", command=self.hide_track_info)
+        self.hide_track_info_button.pack(pady=10)
+
+        # Add a show button
+        self.show_track_info_button = ttk.Button(self.root, text="Show Track Info", command=self.show_track_info)
+        self.show_track_info_button.pack(pady=10)
     
     def start_metronome(self):
         try:
@@ -83,7 +102,7 @@ class MetronomeApp:
         bpm, key = self.get_track_audio_features(track_id)
         self.update_bpm_and_key(bpm, key)
 
-    def fetch_currently_playing_track(self):
+    def fetch_current_track_info(self):
         token_info = sp_oauth.get_cached_token()
         if not token_info:
             auth_url = sp_oauth.get_authorize_url()
@@ -101,8 +120,12 @@ class MetronomeApp:
             track_id = current_track['item']['id']
             bpm, key = self.get_track_audio_features(track_id)
             self.update_bpm_and_key(bpm, key)
+            track_name = current_track['item']['name']
+            self.update_track_name(track_name)
         else:
             print("No track is currently playing.")
+            self.update_bpm_and_key(60, None)
+            self.update_track_name("N/A")
 
     def get_track_audio_features(self, track_id):
         token_info = sp_oauth.get_cached_token()
@@ -113,7 +136,9 @@ class MetronomeApp:
             code = sp_oauth.parse_response_code(response)
             token_info = sp_oauth.get_access_token(code)
         
-        sp = spotipy.Spotify(auth=token_info['access_token'])
+        access_token = token_info['access_token']
+        
+        sp = spotipy.Spotify(auth=access_token)
         audio_features = sp.audio_features(track_id)[0]
         bpm = audio_features['tempo']
         key = audio_features['key']
@@ -124,10 +149,30 @@ class MetronomeApp:
         self.bpm_entry.insert(0, str(bpm))
         self.bpm = bpm
 
-        key_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-        key_name = key_names[key]
+        if key is not None:
+            key_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+            key_name = key_names[key]
+        else:
+            key_name = "N/A"
         self.key_label.config(text=f"Key: {key_name}")
         self.key = key_name
+
+    def update_track_name(self, track_name):
+        self.track_name_label.config(text=f"Track Name: {track_name}")
+
+    def hide_track_info(self):
+        self.track_label.pack_forget()
+        self.track_entry.pack_forget()
+        self.fetch_bpm_button.pack_forget()
+        self.hide_track_info_button.pack_forget()
+        self.show_track_info_button.pack(pady=10)
+
+    def show_track_info(self):
+        self.track_label.pack(pady=10)
+        self.track_entry.pack(pady=10)
+        self.fetch_bpm_button.pack(pady=10)
+        self.hide_track_info_button.pack(pady=10)
+        self.show_track_info_button.pack_forget()
 
 if __name__ == "__main__":
     root = tk.Tk()
