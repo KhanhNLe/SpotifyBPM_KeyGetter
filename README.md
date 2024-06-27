@@ -1,5 +1,27 @@
-Made this because I was tired of googling a song's key and bpm when practicing guitar. 
-Uses Spotify's API Specifically (Web, and WebPlayback)
+Key Features:
+
+Metronome Functionality: The app offers a robust metronome tool that allows musicians to set and adjust tempo (BPM) easily.
+
+Integration with Spotify: Users can seamlessly fetch BPM and track key information from Spotify, enhancing practice sessions with accurate musical data.
+
+User Interface: Designed with simplicity in mind, the app features a user-friendly interface using Tkinter for desktop use, providing intuitive controls for musicians of all skill levels.
+
+How It Works:
+
+Users authenticate their Spotify account through OAuth, enabling the app to access Spotify's vast music database.
+
+Upon selecting the "Fetch BPM and Key" button, the app queries Spotify for real-time BPM and key information of the currently playing track, displaying it instantly.
+
+Musicians benefit from precise tempo guidance and musical key insights directly integrated into their practice environment.
+
+Future Enhancements:
+
+Planned expansions include mobile compatibility, allowing users to access the metronome and Spotify integration on-the-go through iOS or Android devices.
+
+Integration of additional Spotify features such as playlist management and audio playback control to further enrich the user experience.
+
+This collaborative project highlights the intersection of music practice tools and API integration, providing a tailored solution for musicians seeking enhanced practice sessions and musical insights.
+
 
 Usage:
 Log into Spotify Developer Dashboard
