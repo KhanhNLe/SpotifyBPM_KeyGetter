@@ -25,10 +25,14 @@ This collaborative project highlights the intersection of music practice tools a
 
 Usage:
 Log into Spotify Developer Dashboard
+
 Go to Spotify Developer Dashboard.
+
 Log in with your Spotify account credentials.
+
 Select Your Application
 If you haven't already created an application, you'll need to create one before proceeding.
+
 After Creation
 It should list Your
 1. Client ID
@@ -36,16 +40,23 @@ It should list Your
 
 Setting Redirect URI
 Go to your Spotify Developer Dashboard:
+
 Log in to your Spotify Developer account.
+
 Open your application settings.
+
 Set the Redirect URI:
+
 In your app settings, find the Redirect URIs section.
+
 Add http://localhost:8888/callback (or any other appropriate URL) as your Redirect URI.
 
 Edit the script via your favorite IDE:
+
 Copy and paste the IDs into their respectively slot, including your Redirect URI
 
 Save
+
 Run Script
 Look at Terminal, copy-paste link into google.com
 Should ask for your authorization
