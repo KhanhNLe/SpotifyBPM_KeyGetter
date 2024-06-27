@@ -22,6 +22,16 @@ Integration of additional Spotify features such as playlist management and audio
 
 This collaborative project highlights the intersection of music practice tools and API integration, providing a tailored solution for musicians seeking enhanced practice sessions and musical insights.
 
+Pre-requisites
+
+https://docs.brew.sh/Installation
+
+brew install tcl-tk
+
+pip3 install spotipy
+
+pip3 install pygame
+
 
 Usage:
 Log into Spotify Developer Dashboard
