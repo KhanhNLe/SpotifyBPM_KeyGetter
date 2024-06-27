@@ -58,8 +58,12 @@ Copy and paste the IDs into their respectively slot, including your Redirect URI
 Save
 
 Run Script
-Look at Terminal, copy-paste link into google.com
+Look at Terminal, copy-paste link into your web browser.
+
 Should ask for your authorization
+
 I usually get a 404 page here, but that's okay just copy and paste the url after the 404 screen into terminal. 
-Everything should work, if you have spotify installed already.
+
+Everything should work, if you have Spotify installed already.
+
 Have Fun Practicing!
