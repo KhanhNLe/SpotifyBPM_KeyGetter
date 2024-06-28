@@ -1,81 +1,66 @@
-Key Features:
+# Metronome Application
 
-Metronome Functionality: The app offers a robust metronome tool that allows musicians to set and adjust tempo (BPM) easily.
+This is a graphical Metronome application that integrates with Spotify to fetch and display the BPM (beats per minute) and key of the currently playing track. The application is built using `tkinter` for the GUI, `spotipy` for Spotify integration, and `pygame` for metronome functionality.
 
-Integration with Spotify: Users can seamlessly fetch BPM and track key information from Spotify, enhancing practice sessions with accurate musical data.
-  - Added Automatic Fetching (1s  timer)
-  - Automatic Metronome Start Once Song is Fetched
+## Features
 
-User Interface: Designed with simplicity in mind, the app features a user-friendly interface using Tkinter for desktop use, providing intuitive controls for musicians of all skill levels.
+- Displays the BPM and key of the currently playing Spotify track.
+- Provides manual BPM adjustment.
+- Allows toggling of the metronome sound.
+- OAuth authentication with Spotify.
+- Fetches and displays the currently playing track's name and artist.
 
-How It Works:
+## Requirements
 
-Users authenticate their Spotify account through OAuth, enabling the app to access Spotify's vast music database.
+- Python 3.x
+- `tkinter` (usually comes with Python standard library)
+- `spotipy` (Spotify Web API wrapper)
+- `pygame` (for metronome sound)
+- Spotify Developer credentials (Client ID, Client Secret, Redirect URI)
 
-Upon selecting the "Fetch BPM and Key" button, the app queries Spotify for real-time BPM and key information of the currently playing track, displaying it instantly.
+## Installation
 
-Musicians benefit from precise tempo guidance and musical key insights directly integrated into their practice environment.
+1. Clone the repository:
 
-Future Enhancements:
+```sh
+git clone <repository-url>
+cd <repository-directory>
 
-Planned expansions include mobile compatibility, allowing users to access the metronome and Spotify integration on-the-go through iOS or Android devices.
+2. Install the required packages:
 
-Integration of additional Spotify features such as playlist management and audio playback control to further enrich the user experience.
-
-This collaborative project highlights the intersection of music practice tools and API integration, providing a tailored solution for musicians seeking enhanced practice sessions and musical insights.
-
-Pre-requisites
-
-https://docs.brew.sh/Installation
-
-brew install tcl-tk
-
-pip3 install spotipy
-
-pip3 install pygame
+pip install spotipy pygame
 
 
-Usage:
-Log into Spotify Developer Dashboard
+3. Set up your Spotify Developer credentials as environment variables:
+export SPOTIPY_CLIENT_ID='your-client-id'
+export SPOTIPY_CLIENT_SECRET='your-client-secret'
+export SPOTIPY_REDIRECT_URI='your-redirect-uri'
 
-Go to Spotify Developer Dashboard.
+Usage
 
-Log in with your Spotify account credentials.
+1. Run the script:
+    python metro.py
+        
+2. If the Spotify API credentials are not set, a window will prompt you to enter them manually.
+    
+3. The main application window will open. If a Spotify track is playing, it will display the track’s BPM and key. You can start and stop the metronome using the provided controls.
 
-Select Your Application
-If you haven't already created an application, you'll need to create one before proceeding.
+Code Overview
+The script is structured as follows:
 
-After Creation
-It should list Your
-1. Client ID
-2. View Secret ID to show your Secret ID
-
-Setting Redirect URI
-Go to your Spotify Developer Dashboard:
-
-Log in to your Spotify Developer account.
-
-Open your application settings.
-
-Set the Redirect URI:
-
-In your app settings, find the Redirect URIs section.
-
-Add http://localhost:8888/callback (or any other appropriate URL) as your Redirect URI.
-
-Edit the script via your favorite IDE:
-
-Copy and paste the IDs into their respectively slot, including your Redirect URI
-
-Save
-
-Run Script
-Look at Terminal, copy-paste link into your web browser.
-
-Should ask for your authorization
-
-I usually get a 404 page here, but that's okay just copy and paste the url after the 404 screen into terminal. 
-
-Everything should work, if you have Spotify installed already.
-
-Have Fun Practicing!
+    •    MetronomeApp class: Main application class
+    •    __init__: Initializes the main application window and sets up the Spotify OAuth.
+    •    wipe_cached_token: Removes the cached Spotify token.
+    •    init_app: Initializes the Spotify OAuth object and checks for a cached token.
+    •    credentials_window: Prompts the user to enter Spotify API credentials.
+    •    create_widgets: Creates and arranges the application widgets (buttons, labels, etc.).
+    •    start_metronome: Starts the metronome in a separate thread.
+    •    stop_metronome: Stops the metronome.
+    •    play_metronome: Plays the metronome sound at the specified BPM.
+    •    toggle_track_id: Toggles the visibility of the track ID entry.
+    •    authenticate_spotify: Handles the Spotify authentication process.
+    •    fetch_currently_playing_track: Fetches the currently playing Spotify track and updates the UI.
+    •    get_track_audio_features: Retrieves the audio features (BPM and key) of the given track.
+    •    update_bpm_and_key: Updates the BPM and key display.
+    •    update_track_name: Updates the track name display.
+    •    on_closing: Handles application cleanup on closing.
