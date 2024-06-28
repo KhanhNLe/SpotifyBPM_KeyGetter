@@ -3,6 +3,8 @@ Key Features:
 Metronome Functionality: The app offers a robust metronome tool that allows musicians to set and adjust tempo (BPM) easily.
 
 Integration with Spotify: Users can seamlessly fetch BPM and track key information from Spotify, enhancing practice sessions with accurate musical data.
+  - Added Automatic Fetching (1s  timer)
+  - Automatic Metronome Start Once Song is Fetched
 
 User Interface: Designed with simplicity in mind, the app features a user-friendly interface using Tkinter for desktop use, providing intuitive controls for musicians of all skill levels.
 
