@@ -1,17 +1,24 @@
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, filedialog
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import pygame
 import threading
 import webbrowser
 import os
+import json
 
 class MetronomeApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Metronome")
         self.track_id_visible = False
+        self.credentials_file = "spotify_credentials.json"
+        self.is_running = False
+        self.metronome_sound_file = "tick.wav"  # Default metronome sound
+        self.metronome_volume = 1.0  # Default volume (100%)
+        self.current_track_id = None  # Track ID to detect changes
+
 
         # Uncomment the next line to test caching by wiping the token
         # self.wipe_cached_token()
@@ -30,6 +37,146 @@ class MetronomeApp:
             print("No cached token file found to remove.")
 
     def init_app(self):
+        # Retrieve credentials from the credentials file
+        credentials = self.read_credentials()
+
+        if not credentials:
+            print("Spotify API credentials are not set in the credentials file.")
+            self.credentials_window()
+            return
+
+        client_id = credentials.get('SPOTIPY_CLIENT_ID')
+        client_secret = credentials.get('SPOTIPY_CLIENT_SECRET')
+        redirect_uri = credentials.get('SPOTIPY_REDIRECT_URI')
+
+        # Debug prints
+        print(f"SPOTIPY_CLIENT_ID: {client_id}")
+        print(f"SPOTIPY_CLIENT_SECRET: {client_secret}")
+        print(f"SPOTIPY_REDIRECT_URI: {redirect_uri}")
+
+        print("Initializing Spotify OAuth")
+        # Set up the Spotify OAuth object with caching
+        self.sp_oauth = SpotifyOAuth(client_id=client_id,
+                                     client_secret=client_secret,
+                                     redirect_uri=redirect_uri,
+                                     scope="user-read-playback-state user-library-read",
+                                     cache_path=".spotify_cache")
+
+        # Check for a cached token
+        self.check_cached_token()
+        
+
+    def read_credentials(self):
+        if os.path.exists(self.credentials_file):
+            with open(self.credentials_file, 'r') as file:
+                return json.load(file)
+        return None
+
+    def save_credentials(self, client_id, client_secret, redirect_uri):
+        credentials = {
+            'SPOTIPY_CLIENT_ID': client_id,
+            'SPOTIPY_CLIENT_SECRET': client_secret,
+            'SPOTIPY_REDIRECT_URI': redirect_uri
+        }
+        with open(self.credentials_file, 'w') as file:
+            json.dump(credentials, file)
+        print("Credentials saved to file.")
+
+    
+
+    def credentials_window(self):
+        self.prompt_for_credentials()
+
+    def prompt_for_credentials(self):
+        # Create a new window to prompt the user for credentials
+        self.cred_window = tk.Toplevel(self.root)
+        self.cred_window.title("Enter Spotify Credentials")
+
+        tk.Label(self.cred_window, text="Client ID:").grid(row=0, column=0)
+        self.client_id_entry = tk.Entry(self.cred_window)
+        self.client_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.cred_window, text="Client Secret:").grid(row=1, column=0)
+        self.client_secret_entry = tk.Entry(self.cred_window)
+        self.client_secret_entry.grid(row=1, column=1)
+
+        tk.Label(self.cred_window, text="Redirect URI:").grid(row=2, column=0)
+        self.redirect_uri_entry = tk.Entry(self.cred_window)
+        self.redirect_uri_entry.grid(row=2, column=1)
+
+        tk.Button(self.cred_window, text="Submit", command=self.set_credentials).grid(row=3, columnspan=2)
+        # Retrieve credentials from environment variables
+        client_id = os.getenv('SPOTIPY_CLIENT_ID')
+        client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
+        redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
+
+        # Debug prints
+        print(f"SPOTIPY_CLIENT_ID: {client_id}")
+        print(f"SPOTIPY_CLIENT_SECRET: {client_secret}")
+        print(f"SPOTIPY_REDIRECT_URI: {redirect_uri}")
+
+        # Validate that the environment variables are set
+        if not client_id or not client_secret or not redirect_uri:
+            print("Spotify API credentials are not set in the environment variables.")
+            self.credentials_window()
+            return
+
+        print("Initializing Spotify OAuth")
+        # Set up the Spotify OAuth object with caching
+        self.sp_oauth = SpotifyOAuth(client_id=client_id,
+                                     client_secret=client_secret,
+                                     redirect_uri=redirect_uri,
+                                     scope="user-read-playback-state user-library-read",
+                                     cache_path=".spotify_cache")
+
+        # Check for a cached token
+        self.check_cached_token()
+
+    def credentials_window(self):
+        self.prompt_for_credentials()
+
+    def prompt_for_credentials(self):
+        # Create a new window to prompt the user for credentials
+        self.cred_window = tk.Toplevel(self.root)
+        self.cred_window.title("Enter Spotify Credentials")
+
+        tk.Label(self.cred_window, text="Client ID:").grid(row=0, column=0)
+        self.client_id_entry = tk.Entry(self.cred_window)
+        self.client_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.cred_window, text="Client Secret:").grid(row=1, column=0)
+        self.client_secret_entry = tk.Entry(self.cred_window)
+        self.client_secret_entry.grid(row=1, column=1)
+
+        tk.Label(self.cred_window, text="Redirect URI:").grid(row=2, column=0)
+        self.redirect_uri_entry = tk.Entry(self.cred_window)
+        self.redirect_uri_entry.grid(row=2, column=1)
+
+        tk.Button(self.cred_window, text="Submit", command=self.set_credentials).grid(row=3, columnspan=2)
+
+    def set_credentials(self):
+        client_id = self.client_id_entry.get()
+        client_secret = self.client_secret_entry.get()
+        redirect_uri = self.redirect_uri_entry.get()
+
+        if not client_id or not client_secret or not redirect_uri:
+            messagebox.showerror("Error", "All fields are required!")
+            return
+
+        os.environ['SPOTIPY_CLIENT_ID'] = client_id
+        os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
+        os.environ['SPOTIPY_REDIRECT_URI'] = redirect_uri
+
+        # Debug print
+        print("Environment variables set:")
+        print(f"SPOTIPY_CLIENT_ID: {os.getenv('SPOTIPY_CLIENT_ID')}")
+        print(f"SPOTIPY_CLIENT_SECRET: {os.getenv('SPOTIPY_CLIENT_SECRET')}")
+        print(f"SPOTIPY_REDIRECT_URI: {os.getenv('SPOTIPY_REDIRECT_URI')}")
+
+        self.cred_window.destroy()
+
+        # Re-initialize the application with the new credentials
+        self.init_app()
         # Retrieve credentials from environment variables
         client_id = os.getenv('SPOTIPY_CLIENT_ID')
         client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
@@ -53,24 +200,26 @@ class MetronomeApp:
         self.check_cached_token()
 
     def credentials_window(self):
+        self.prompt_for_credentials()
+
+    def prompt_for_credentials(self):
+        # Create a new window to prompt the user for credentials
         self.cred_window = tk.Toplevel(self.root)
         self.cred_window.title("Enter Spotify Credentials")
 
-        ttk.Label(self.cred_window, text="Client ID:").pack(pady=5)
-        self.client_id_entry = ttk.Entry(self.cred_window, width=40)
-        self.client_id_entry.pack(pady=5)
+        tk.Label(self.cred_window, text="Client ID:").grid(row=0, column=0)
+        self.client_id_entry = tk.Entry(self.cred_window)
+        self.client_id_entry.grid(row=0, column=1)
 
-        ttk.Label(self.cred_window, text="Client Secret:").pack(pady=5)
-        self.client_secret_entry = ttk.Entry(self.cred_window, width=40, show="*")
-        self.client_secret_entry.pack(pady=5)
+        tk.Label(self.cred_window, text="Client Secret:").grid(row=1, column=0)
+        self.client_secret_entry = tk.Entry(self.cred_window)
+        self.client_secret_entry.grid(row=1, column=1)
 
-        ttk.Label(self.cred_window, text="Redirect URI:").pack(pady=5)
-        self.redirect_uri_entry = ttk.Entry(self.cred_window, width=40)
-        self.redirect_uri_entry.pack(pady=5)
-        self.redirect_uri_entry.insert(0, "http://localhost:8888/callback")
+        tk.Label(self.cred_window, text="Redirect URI:").grid(row=2, column=0)
+        self.redirect_uri_entry = tk.Entry(self.cred_window)
+        self.redirect_uri_entry.grid(row=2, column=1)
 
-        submit_button = ttk.Button(self.cred_window, text="Submit", command=self.set_credentials)
-        submit_button.pack(pady=10)
+        tk.Button(self.cred_window, text="Submit", command=self.set_credentials).grid(row=3, columnspan=2)
 
     def set_credentials(self):
         client_id = self.client_id_entry.get()
@@ -89,7 +238,6 @@ class MetronomeApp:
 
         # Re-initialize the application with the new credentials
         self.init_app()
-
     def check_cached_token(self):
         token_info = self.sp_oauth.get_cached_token()
         print(f"Cached token: {token_info}")
@@ -145,38 +293,8 @@ class MetronomeApp:
         self.is_running = False
         self.current_track_id = None
 
-        self.create_widgets()
-        self.hide_track_info()  # Call Hide_Track_Info
-
+        self.setup_gui()
         self.fetch_currently_playing_track()  # Start the dynamic checker
-
-    def create_widgets(self):
-        self.bpm_label = ttk.Label(self.root, text="BPM:")
-        self.bpm_label.pack(pady=10)
-
-        self.bpm_entry = ttk.Entry(self.root, width=10)
-        self.bpm_entry.pack(pady=10)
-        self.bpm_entry.insert(0, "60")
-
-        self.start_button = ttk.Button(self.root, text="Start", command=self.start_metronome)
-        self.start_button.pack(pady=10)
-
-        self.stop_button = ttk.Button(self.root, text="Stop", command=self.stop_metronome)
-        self.stop_button.pack(pady=10)
-
-        # Add a hide button
-        self.hide_track_info_button = ttk.Button(self.root, text="Hide Track Info", command=self.hide_track_info)
-        self.hide_track_info_button.pack(pady=10)
-
-        # Add a show button
-        self.show_track_info_button = ttk.Button(self.root, text="Show Track Info", command=self.show_track_info)
-        self.show_track_info_button.pack(pady=10)
-
-        self.track_name_label = ttk.Label(self.root, text="")
-        self.track_name_label.pack(pady=10)
-
-        self.key_label = ttk.Label(self.root, text="")
-        self.key_label.pack(pady=10)
 
     def start_metronome(self):
         if not self.is_running:
@@ -186,11 +304,24 @@ class MetronomeApp:
 
     def run_metronome(self):
         while self.is_running:
-            pygame.mixer.Sound.play(self.tick_sound)
-            pygame.time.wait(int(60000 / self.bpm))
+            if self.metronome_sound_file:
+                try:
+                    pygame.mixer.music.load(self.metronome_sound_file)
+                    pygame.mixer.music.set_volume(self.volume_slider.get())
+                    pygame.mixer.music.play()
+                    print(f"Playing metronome sound: {self.metronome_sound_file}")
+                    pygame.time.wait(int(60000 / self.bpm))  # Wait for the duration of one beat
+                except pygame.error as e:
+                    print(f"Error playing metronome sound: {e}")
+                    self.stop_metronome()
 
     def stop_metronome(self):
-        self.is_running = False
+        if self.is_running:
+            self.is_running = False
+            if hasattr(self, 'metronome_thread'):
+                self.metronome_thread.join()  # Wait for the thread to finish
+            print("Metronome stopped.")
+            pygame.mixer.music.stop()
 
     def show_track_info(self):
         self.track_name_label.pack()
@@ -202,27 +333,74 @@ class MetronomeApp:
         self.key_label.pack_forget()
         self.track_id_visible = False
 
-    def fetch_currently_playing_track(self):
-        if not hasattr(self, 'sp'):
-            return
 
-        current_playback = self.sp.current_playback()
-        if current_playback and current_playback['is_playing']:
-            track_id = current_playback['item']['id']
-            track_name = current_playback['item']['name']
-            artist_name = current_playback['item']['artists'][0]['name']
-            if track_id != self.current_track_id:
-                self.current_track_id = track_id
-                bpm, key = self.get_track_audio_features(track_id)
-                self.update_bpm_and_key(bpm, key)
-                self.update_track_name(track_name, artist_name)
-                self.start_metronome()  # Start metronome after fetching BPM and key
-        else:
-            print("No track is currently playing.")
+    def setup_gui(self):
+        # Frame for Metronome Control
+        controls_frame = tk.Frame(self.root)
+        controls_frame.pack(padx=10, pady=10)
         
-        # Schedule the next check
-        self.root.after(1000, self.fetch_currently_playing_track)  # Check every 1 second
+        
+        # Metronome sound file selection
+        self.sound_file_button = tk.Button(self.root, text="Select Metronome Sound", command=self.select_sound_file)
+        self.sound_file_button.pack()
 
+        # Metronome volume control
+        self.volume_slider = tk.Scale(controls_frame, from_=0, to=1, resolution=0.01, orient=tk.HORIZONTAL, label="Volume")
+        self.volume_slider.set(self.metronome_volume)
+        self.volume_slider.grid(row=0, column=1, padx=5, pady=5)
+        
+        # Other GUI elements...
+        self.track_name_label = tk.Label(self.root, text="Track: None")
+        self.track_name_label.pack()
+
+        # BPM label and entry
+        self.bpm_label = tk.Label(controls_frame, text="BPM:")
+        self.bpm_label.grid(row=2, column=0, padx=5, pady=5)
+
+        self.bpm_entry = tk.Entry(controls_frame, state='readonly')
+        self.bpm_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.bpm_entry.insert(0, "N/A")  # Set initial placeholder value
+
+            
+
+
+
+        self.key_label = tk.Label(self.root, text="Key:")
+        self.key_label.pack()
+
+        # Initialize pygame for sound playback
+        pygame.mixer.init()
+
+    def select_sound_file(self):
+        self.metronome_sound_file = filedialog.askopenfilename(
+            title="Select Metronome Sound",
+            filetypes=[("WAV files", "*.wav"), ("All files", "*.*")]
+        )
+        print(f"Selected sound file: {self.metronome_sound_file}")
+
+    def fetch_currently_playing_track(self):
+        try:
+            current_playback = self.sp.current_playback()
+            if current_playback and current_playback['is_playing']:
+                track_id = current_playback['item']['id']
+                track_name = current_playback['item']['name']
+                artist_name = current_playback['item']['artists'][0]['name']
+                if track_id != self.current_track_id:
+                    self.current_track_id = track_id
+                    bpm, key = self.get_track_audio_features(track_id)
+                    self.update_bpm_and_key(bpm, key)
+                    self.update_track_name(track_name, artist_name)
+                    self.start_metronome()  # Start metronome after fetching BPM and key
+                elif not self.is_running:
+                    self.start_metronome()  # Resume metronome if it was stopped
+            else:
+                print("No track is currently playing.")
+                self.stop_metronome()  # Stop the metronome if no track is playing
+        except Exception as e:
+            print(f"Error fetching currently playing track: {e}")
+        
+        self.root.after(1000, self.fetch_currently_playing_track)  # Check every 1 second
+        
     def get_track_audio_features(self, track_id):
         audio_features = self.sp.audio_features(track_id)[0]
         bpm = round(audio_features['tempo'])  # Round the BPM value
@@ -230,14 +408,15 @@ class MetronomeApp:
         return bpm, key
 
     def update_bpm_and_key(self, bpm, key):
+        self.bpm_entry.config(state=tk.NORMAL)  # Temporarily make it editable
         self.bpm_entry.delete(0, tk.END)
-        self.bpm_entry.insert(0, str(bpm))
+        self.bpm_entry.insert(0, str(bpm))  # Insert fetched BPM
+        self.bpm_entry.config(state='readonly')  # Set it back to readonly
         self.bpm = bpm 
         key_names = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
         key_name = key_names[key]
         self.key_label.config(text=f"Key: {key_name}")
         self.key = key_name
-        
     def update_track_name(self, track_name, artist_name):
         self.track_name_label.config(text=f"Track: {track_name} by {artist_name}")
 
