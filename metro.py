@@ -21,7 +21,7 @@ class MetronomeApp:
 
 
         # Uncomment the next line to test caching by wiping the token
-        # self.wipe_cached_token()
+        #self.wipe_cached_token()
 
         # Set up the closing protocol to handle cleanup
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
@@ -29,15 +29,8 @@ class MetronomeApp:
         # Initialize the application
         self.init_app()
 
-    def wipe_cached_token(self):
-        try:
-            os.remove(".spotify_cache")
-            print("Cached token file removed.")
-        except FileNotFoundError:
-            print("No cached token file found to remove.")
-
+    
     def init_app(self):
-        # Retrieve credentials from the credentials file
         credentials = self.read_credentials()
 
         if not credentials:
@@ -49,28 +42,28 @@ class MetronomeApp:
         client_secret = credentials.get('SPOTIPY_CLIENT_SECRET')
         redirect_uri = credentials.get('SPOTIPY_REDIRECT_URI')
 
-        # Debug prints
         print(f"SPOTIPY_CLIENT_ID: {client_id}")
         print(f"SPOTIPY_CLIENT_SECRET: {client_secret}")
         print(f"SPOTIPY_REDIRECT_URI: {redirect_uri}")
 
         print("Initializing Spotify OAuth")
-        # Set up the Spotify OAuth object with caching
         self.sp_oauth = SpotifyOAuth(client_id=client_id,
                                      client_secret=client_secret,
                                      redirect_uri=redirect_uri,
-                                     scope="user-read-playback-state user-library-read",
-                                     cache_path=".spotify_cache")
+                                     scope="user-read-playback-state user-library-read")
 
-        # Check for a cached token
-        self.check_cached_token()
+        self.sp = spotipy.Spotify(auth_manager=self.sp_oauth)
         
+        self.setup_gui()
+        self.fetch_currently_playing_track()
 
     def read_credentials(self):
-        if os.path.exists(self.credentials_file):
+        try:
             with open(self.credentials_file, 'r') as file:
-                return json.load(file)
-        return None
+                credentials = json.load(file)
+            return credentials
+        except FileNotFoundError:
+            return None
 
     def save_credentials(self, client_id, client_secret, redirect_uri):
         credentials = {
@@ -82,13 +75,7 @@ class MetronomeApp:
             json.dump(credentials, file)
         print("Credentials saved to file.")
 
-    
-
     def credentials_window(self):
-        self.prompt_for_credentials()
-
-    def prompt_for_credentials(self):
-        # Create a new window to prompt the user for credentials
         self.cred_window = tk.Toplevel(self.root)
         self.cred_window.title("Enter Spotify Credentials")
 
@@ -104,151 +91,15 @@ class MetronomeApp:
         self.redirect_uri_entry = tk.Entry(self.cred_window)
         self.redirect_uri_entry.grid(row=2, column=1)
 
-        tk.Button(self.cred_window, text="Submit", command=self.set_credentials).grid(row=3, columnspan=2)
-        # Retrieve credentials from environment variables
-        client_id = os.getenv('SPOTIPY_CLIENT_ID')
-        client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
-        redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
+        tk.Button(self.cred_window, text="Save", command=self.save_credentials_from_window).grid(row=3, columnspan=2)
 
-        # Debug prints
-        print(f"SPOTIPY_CLIENT_ID: {client_id}")
-        print(f"SPOTIPY_CLIENT_SECRET: {client_secret}")
-        print(f"SPOTIPY_REDIRECT_URI: {redirect_uri}")
-
-        # Validate that the environment variables are set
-        if not client_id or not client_secret or not redirect_uri:
-            print("Spotify API credentials are not set in the environment variables.")
-            self.credentials_window()
-            return
-
-        print("Initializing Spotify OAuth")
-        # Set up the Spotify OAuth object with caching
-        self.sp_oauth = SpotifyOAuth(client_id=client_id,
-                                     client_secret=client_secret,
-                                     redirect_uri=redirect_uri,
-                                     scope="user-read-playback-state user-library-read",
-                                     cache_path=".spotify_cache")
-
-        # Check for a cached token
-        self.check_cached_token()
-
-    def credentials_window(self):
-        self.prompt_for_credentials()
-
-    def prompt_for_credentials(self):
-        # Create a new window to prompt the user for credentials
-        self.cred_window = tk.Toplevel(self.root)
-        self.cred_window.title("Enter Spotify Credentials")
-
-        tk.Label(self.cred_window, text="Client ID:").grid(row=0, column=0)
-        self.client_id_entry = tk.Entry(self.cred_window)
-        self.client_id_entry.grid(row=0, column=1)
-
-        tk.Label(self.cred_window, text="Client Secret:").grid(row=1, column=0)
-        self.client_secret_entry = tk.Entry(self.cred_window)
-        self.client_secret_entry.grid(row=1, column=1)
-
-        tk.Label(self.cred_window, text="Redirect URI:").grid(row=2, column=0)
-        self.redirect_uri_entry = tk.Entry(self.cred_window)
-        self.redirect_uri_entry.grid(row=2, column=1)
-
-        tk.Button(self.cred_window, text="Submit", command=self.set_credentials).grid(row=3, columnspan=2)
-
-    def set_credentials(self):
+    def save_credentials_from_window(self):
         client_id = self.client_id_entry.get()
         client_secret = self.client_secret_entry.get()
         redirect_uri = self.redirect_uri_entry.get()
-
-        if not client_id or not client_secret or not redirect_uri:
-            messagebox.showerror("Error", "All fields are required!")
-            return
-
-        os.environ['SPOTIPY_CLIENT_ID'] = client_id
-        os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
-        os.environ['SPOTIPY_REDIRECT_URI'] = redirect_uri
-
-        # Debug print
-        print("Environment variables set:")
-        print(f"SPOTIPY_CLIENT_ID: {os.getenv('SPOTIPY_CLIENT_ID')}")
-        print(f"SPOTIPY_CLIENT_SECRET: {os.getenv('SPOTIPY_CLIENT_SECRET')}")
-        print(f"SPOTIPY_REDIRECT_URI: {os.getenv('SPOTIPY_REDIRECT_URI')}")
-
+        self.save_credentials(client_id, client_secret, redirect_uri)
         self.cred_window.destroy()
-
-        # Re-initialize the application with the new credentials
         self.init_app()
-        # Retrieve credentials from environment variables
-        client_id = os.getenv('SPOTIPY_CLIENT_ID')
-        client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
-        redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
-
-        # Validate that the environment variables are set
-        if not client_id or not client_secret or not redirect_uri:
-            print("Spotify API credentials are not set in the environment variables.")
-            self.credentials_window()
-            return
-
-        print("Initializing Spotify OAuth")
-        # Set up the Spotify OAuth object with caching
-        self.sp_oauth = SpotifyOAuth(client_id=client_id,
-                                     client_secret=client_secret,
-                                     redirect_uri=redirect_uri,
-                                     scope="user-read-playback-state user-library-read",
-                                     cache_path=".spotify_cache")
-
-        # Check for a cached token
-        self.check_cached_token()
-
-    def credentials_window(self):
-        self.prompt_for_credentials()
-
-    def prompt_for_credentials(self):
-        # Create a new window to prompt the user for credentials
-        self.cred_window = tk.Toplevel(self.root)
-        self.cred_window.title("Enter Spotify Credentials")
-
-        tk.Label(self.cred_window, text="Client ID:").grid(row=0, column=0)
-        self.client_id_entry = tk.Entry(self.cred_window)
-        self.client_id_entry.grid(row=0, column=1)
-
-        tk.Label(self.cred_window, text="Client Secret:").grid(row=1, column=0)
-        self.client_secret_entry = tk.Entry(self.cred_window)
-        self.client_secret_entry.grid(row=1, column=1)
-
-        tk.Label(self.cred_window, text="Redirect URI:").grid(row=2, column=0)
-        self.redirect_uri_entry = tk.Entry(self.cred_window)
-        self.redirect_uri_entry.grid(row=2, column=1)
-
-        tk.Button(self.cred_window, text="Submit", command=self.set_credentials).grid(row=3, columnspan=2)
-
-    def set_credentials(self):
-        client_id = self.client_id_entry.get()
-        client_secret = self.client_secret_entry.get()
-        redirect_uri = self.redirect_uri_entry.get()
-
-        if not client_id or not client_secret or not redirect_uri:
-            messagebox.showerror("Error", "All fields are required!")
-            return
-
-        os.environ['SPOTIPY_CLIENT_ID'] = client_id
-        os.environ['SPOTIPY_CLIENT_SECRET'] = client_secret
-        os.environ['SPOTIPY_REDIRECT_URI'] = redirect_uri
-
-        self.cred_window.destroy()
-
-        # Re-initialize the application with the new credentials
-        self.init_app()
-    def check_cached_token(self):
-        token_info = self.sp_oauth.get_cached_token()
-        print(f"Cached token: {token_info}")
-
-        if not token_info:
-            print("No cached token found, proceeding with authorization.")
-            self.authorize_spotify()
-        else:
-            print("Using cached token.")
-            self.sp = spotipy.Spotify(auth=token_info['access_token'])
-            self.complete_initialization()
 
     def authorize_spotify(self):
         auth_url = self.sp_oauth.get_authorize_url()
