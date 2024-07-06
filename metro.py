@@ -19,10 +19,6 @@ class MetronomeApp:
         self.metronome_volume = 1.0  # Default volume (100%)
         self.current_track_id = None  # Track ID to detect changes
 
-
-        # Uncomment the next line to test caching by wiping the token
-        #self.wipe_cached_token()
-
         # Set up the closing protocol to handle cleanup
         self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
