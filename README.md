@@ -31,10 +31,7 @@ cd <repository-directory>
 pip install spotipy pygame
 
 
-3. Set up your Spotify Developer credentials as environment variables:
-export SPOTIPY_CLIENT_ID='your-client-id'
-export SPOTIPY_CLIENT_SECRET='your-client-secret'
-export SPOTIPY_REDIRECT_URI='your-redirect-uri'
+3. Set up your Spotify Developer credentials to enter into the python script.
 
 Usage
 
@@ -43,24 +40,4 @@ Usage
         
 2. If the Spotify API credentials are not set, a window will prompt you to enter them manually.
     
-3. The main application window will open. If a Spotify track is playing, it will display the track’s BPM and key. You can start and stop the metronome using the provided controls.
-
-Code Overview
-The script is structured as follows:
-
-    •    MetronomeApp class: Main application class
-    •    __init__: Initializes the main application window and sets up the Spotify OAuth.
-    •    wipe_cached_token: Removes the cached Spotify token.
-    •    init_app: Initializes the Spotify OAuth object and checks for a cached token.
-    •    credentials_window: Prompts the user to enter Spotify API credentials.
-    •    create_widgets: Creates and arranges the application widgets (buttons, labels, etc.).
-    •    start_metronome: Starts the metronome in a separate thread.
-    •    stop_metronome: Stops the metronome.
-    •    play_metronome: Plays the metronome sound at the specified BPM.
-    •    toggle_track_id: Toggles the visibility of the track ID entry.
-    •    authenticate_spotify: Handles the Spotify authentication process.
-    •    fetch_currently_playing_track: Fetches the currently playing Spotify track and updates the UI.
-    •    get_track_audio_features: Retrieves the audio features (BPM and key) of the given track.
-    •    update_bpm_and_key: Updates the BPM and key display.
-    •    update_track_name: Updates the track name display.
-    •    on_closing: Handles application cleanup on closing.
+3. The main application window will open. If a Spotify track is playing, it will display the track’s BPM and key. Stop Metronome by Pausing on Spotify
