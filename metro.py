@@ -5,7 +5,6 @@ from spotipy.oauth2 import SpotifyOAuth
 import pygame
 import threading
 import webbrowser
-import os
 import json
 
 class MetronomeApp:
@@ -146,6 +145,7 @@ class MetronomeApp:
     def start_metronome(self):
         if not self.is_running:
             self.is_running = True
+            print("Starting metronome...")
             self.metronome_thread = threading.Thread(target=self.run_metronome)
             self.metronome_thread.start()
 
@@ -153,10 +153,10 @@ class MetronomeApp:
         while self.is_running:
             if self.metronome_sound_file:
                 try:
+                    print(f"Loading metronome sound: {self.metronome_sound_file}")
                     pygame.mixer.music.load(self.metronome_sound_file)
                     pygame.mixer.music.set_volume(self.volume_slider.get())
                     pygame.mixer.music.play()
-                    print(f"Playing metronome sound: {self.metronome_sound_file}")
                     pygame.time.wait(int(60000 / self.bpm))  # Wait for the duration of one beat
                 except pygame.error as e:
                     print(f"Error playing metronome sound: {e}")
@@ -165,10 +165,11 @@ class MetronomeApp:
     def stop_metronome(self):
         if self.is_running:
             self.is_running = False
+            print("Stopping metronome...")
             if hasattr(self, 'metronome_thread'):
                 self.metronome_thread.join()  # Wait for the thread to finish
-            print("Metronome stopped.")
             pygame.mixer.music.stop()
+            print("Metronome stopped.")
 
     def show_track_info(self):
         self.track_name_label.pack()
@@ -208,10 +209,6 @@ class MetronomeApp:
         self.bpm_entry.grid(row=2, column=1, padx=5, pady=5)
         self.bpm_entry.insert(0, "N/A")  # Set initial placeholder value
 
-            
-
-
-
         self.key_label = tk.Label(self.root, text="Key:")
         self.key_label.pack()
 
@@ -241,12 +238,11 @@ class MetronomeApp:
                 elif not self.is_running:
                     self.start_metronome()  # Resume metronome if it was stopped
             else:
-                print("No track is currently playing.")
                 self.stop_metronome()  # Stop the metronome if no track is playing
         except Exception as e:
             print(f"Error fetching currently playing track: {e}")
         
-        self.root.after(1000, self.fetch_currently_playing_track)  # Check every 1 second
+        self.root.after(500, self.fetch_currently_playing_track)  # Check every .5 second
         
     def get_track_audio_features(self, track_id):
         audio_features = self.sp.audio_features(track_id)[0]
